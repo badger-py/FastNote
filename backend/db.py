@@ -1,20 +1,36 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from pydantic import BaseModel
+import pymongo
+from pymongo.database import Database
 
 from config import Config
 
-SQLALCHEMY_DATABASE_URL: str = Config().SQLALCHEMY_DATABASE_URL
+config = Config()
 
-if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-    )
-else:
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL
-    )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# @contextlib.contextmanager
+def get_db():
+    try:
+        client = pymongo.MongoClient(config.MONGO_DB)
+        db = client.__getattr__(config.MONGO_DB_NAME)
+        yield db
+    finally:
+        if client:
+            client.close()
 
-Base = declarative_base()
+
+class Base(BaseModel):
+    async def save(self, db: Database) -> str:
+        """Save model to DB and modify itself
+
+        Args:
+            db (Database): connection to DB
+
+        Returns:
+            str: id of created entity
+        """
+        collection = getattr(db, self.__collectionname__)
+        if not hasattr(self, "__notsave__"):
+            self.__notsave__ = []
+        id = str(collection.insert_one(self.dict(exclude_unset=True, exclude=self.__notsave__)))
+        self.id = id
+        return id

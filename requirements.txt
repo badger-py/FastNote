@@ -3,4 +3,4 @@ flake8
 pep8-naming
 
 fastapi[all]
-sqlalchemy
+pymongo

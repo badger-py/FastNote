@@ -1,8 +1,9 @@
-from db import Base, engine
+from db import get_db
 
 
 # create tables
-Base.metadata.create_all(bind=engine)
-print("db was created successfully")
+db = next(get_db())
+for i in ["users", "folders", "notes"]:
+    db.create_collection(i)
 
 # NOTE: you can use Faker libary to create fake data
