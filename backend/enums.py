@@ -3,6 +3,7 @@ from enum import Enum, IntEnum
 
 class Color(Enum):
     # TODO:
+    grey = ""
     red = ""
     blue = ""
     green = ""
